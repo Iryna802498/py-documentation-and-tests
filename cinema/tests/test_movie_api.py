@@ -10,6 +10,7 @@ from rest_framework.test import APIClient
 from rest_framework import status
 
 from cinema.models import Movie, MovieSession, CinemaHall, Genre, Actor
+from cinema.serializers import MovieListSerializer, MovieDetailSerializer
 
 MOVIE_URL = reverse("cinema:movie-list")
 MOVIE_SESSION_URL = reverse("cinema:moviesession-list")
@@ -64,6 +65,51 @@ def image_upload_url(movie_id):
 
 def detail_url(movie_id):
     return reverse("cinema:movie-detail", args=[movie_id])
+
+
+class AuthorizedMovieApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.user = get_user_model().objects.create_user(
+            "test_user@test.test",
+            "test_password"
+        )
+        self.client.force_authenticate(self.user)
+        self.movie = sample_movie()
+        self.movie_detail_url = detail_url(self.movie.id)
+
+    def test_movie_list(self):
+        res = self.client.get(MOVIE_URL)
+        movie = Movie.objects.all()
+        serializer = MovieListSerializer(movie, many=True)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(serializer.data, res.data)
+
+    def test_movie_retrieve(self):
+        res = self.client.get(self.movie_detail_url)
+        serializer = MovieDetailSerializer(self.movie)
+        self.assertEqual(res.status_code, status.HTTP_200_OK)
+        self.assertEqual(serializer.data, res.data)
+
+
+class UnauthorizedMovieApiTests(TestCase):
+    def setUp(self):
+        self.client = APIClient()
+        self.movie = sample_movie()
+
+    def test_movie_list_unauthorized(self):
+        res = self.client.get(MOVIE_URL)
+        self.assertEqual(
+            res.status_code,
+            status.HTTP_401_UNAUTHORIZED
+        )
+
+    def test_movie_retrieve_unauthorized(self):
+        res = self.client.get(detail_url(self.movie.id))
+        self.assertEqual(
+            res.status_code,
+            status.HTTP_401_UNAUTHORIZED
+        )
 
 
 class MovieImageUploadTests(TestCase):
