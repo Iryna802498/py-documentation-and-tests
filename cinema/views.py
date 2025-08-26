@@ -147,7 +147,6 @@ class MovieViewSet(
             )
         ]
     )
-
     def list(self, request, *args, **kwargs):
         """Get list of movies."""
         return super().list(request, *args, **kwargs)
@@ -214,11 +213,10 @@ class MovieSessionViewSet(viewsets.ModelViewSet):
             )
         ]
     )
-
     def list(self, request, *args, **kwargs):
         """Get list of movie sessions."""
         return super().list(request, *args, **kwargs)
-    
+
 
 class OrderPagination(PageNumberPagination):
     page_size = 10
